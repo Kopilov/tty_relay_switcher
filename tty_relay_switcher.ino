@@ -18,15 +18,17 @@ bool isSwitchRelayCommand(String &command) {
 }
 
 class SwitchRelayCommand {
+    String src;
     public:
 
     int number;
     int delaySeconds;
-    
+
     SwitchRelayCommand(String commandSrc) {
+        src = String(commandSrc.c_str());
         commandSrc.remove(0, switchRelayCommandBegin.length());
         commandSrc.remove(commandSrc.length() - switchRelayCommandEnd.length(), switchRelayCommandEnd.length());
-        
+
         int delimiterPosition;
         do {
             delimiterPosition = commandSrc.indexOf(',');
@@ -52,7 +54,11 @@ class SwitchRelayCommand {
                 token.replace("delaySeconds", "");
                 delaySeconds = token.toInt();
             }
-        } while (delimiterPosition != -1);        
+        } while (delimiterPosition != -1);
+    }
+
+    String toString() {
+        return src;
     }
 };
 
@@ -62,10 +68,6 @@ class RelayState {
     int secondsToBeEnabled = 0;
 
     void enableForSeconds(int seconds) {
-        Serial.write("enableForSeconds ");
-        Serial.write(itoa(seconds, "        ", 10));
-        Serial.write("\r\n");
-
         if (seconds > 0) {
             secondsToBeEnabled = seconds;
             digitalWrite(number + pinoutOffset, HIGH);
@@ -92,9 +94,9 @@ class RelayState {
 
 class RelaysState {
     RelayState relaysStateInternal[totalRelays];
-    
+
     public:
-    
+
     RelaysState() {
         for (int i = 0; i < totalRelays; i++) {
             relaysStateInternal[i].number = i;
@@ -102,11 +104,7 @@ class RelaysState {
     }
 
     void execCommand(SwitchRelayCommand command) {
-        Serial.write("execCommand\r\n");
         if (totalRelays > command.number) {
-            Serial.write("command.number ");
-            Serial.write(itoa(command.number, "     ", 10));
-            Serial.write("\r\n");
             relaysStateInternal[command.number].enableForSeconds(command.delaySeconds);
         }
     }
@@ -127,17 +125,15 @@ void loop() {
 
     input.trim();
     if (input.length() == 0) return;
-    
+
     if (isSwitchRelayCommand(input)) {
         SwitchRelayCommand command = SwitchRelayCommand(input);
+        Serial.write("Executing command:\r\n");
+        Serial.write(command.toString().c_str());
         currentRelaysState.execCommand(command);
-
-        Serial.write("Original input:\r\n");
-        Serial.write(input.c_str());
-        Serial.write("\r\n");
     } else {
         Serial.write("Unknown input:\r\n");
         Serial.write(input.c_str());
-        Serial.write("\r\n");
     }
+    Serial.write("\r\n");
 }
