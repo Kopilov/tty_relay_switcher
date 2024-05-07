@@ -1,0 +1,8 @@
+#!/bin/sh
+
+DEVICE=/dev/ttyACM0
+
+RELAY_NUMBER=$1
+DELAY_SECONDS=$2
+
+echo "SwitchTheRelay(number = $RELAY_NUMBER, delaySeconds = $DELAY_SECONDS);" > $DEVICE
