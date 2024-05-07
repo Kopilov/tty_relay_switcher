@@ -1,15 +1,21 @@
 const int totalRelays = 4;
-const int pinoutOffset = 4;
+const int pinoutOffset = 7;
+const int zeroBasedNumber = false;
+const bool pinoutInversed = true;
 
 void setup() {
     for (int i = 0; i < totalRelays; i++) {
-        pinMode(i + pinoutOffset, OUTPUT);
+        if (pinoutInversed) {
+            pinMode(pinoutOffset - i, OUTPUT);
+        } else {
+            pinMode(pinoutOffset + i, OUTPUT);
+        }
     }
     Serial.begin(115200);
 }
 
 //command example:
-//SwitchTheRelay(number = 1, delaySeconds = 3);
+//SwitchTheRelay(number = 4, delaySeconds = 3);
 String switchRelayCommandBegin = String("SwitchTheRelay(");
 String switchRelayCommandEnd = String(");");
 
@@ -49,6 +55,9 @@ class SwitchRelayCommand {
             if (token.startsWith("number")) {
                 token.replace("number", "");
                 number = token.toInt();
+                if (!zeroBasedNumber) {
+                    number--;
+                }
             }
             if (token.startsWith("delaySeconds")) {
                 token.replace("delaySeconds", "");
@@ -62,6 +71,14 @@ class SwitchRelayCommand {
     }
 };
 
+void switchRelay(int number, int level) {
+    if (pinoutInversed) {
+        digitalWrite(pinoutOffset - number, level);
+    } else {
+        digitalWrite(pinoutOffset + number, level);
+    }
+}
+
 class RelayState {
     public:
     int number;
@@ -70,7 +87,7 @@ class RelayState {
     void enableForSeconds(int seconds) {
         if (seconds > 0) {
             secondsToBeEnabled = seconds;
-            digitalWrite(number + pinoutOffset, HIGH);
+            switchRelay(number, HIGH);
         }
         if (seconds <= 0) {
             disable();
@@ -79,7 +96,7 @@ class RelayState {
 
     void disable() {
         secondsToBeEnabled = 0;
-        digitalWrite(number + pinoutOffset, LOW);
+        switchRelay(number, LOW);
     }
 
     void tick() {
